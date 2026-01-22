@@ -27,12 +27,16 @@ public class DeliveryPersonService {
     }
 
     public DeliveryPerson updateProfileDetails(DeliveryPerson deliveryPerson) {
-        User user = deliveryPerson.getUser();
-        if (user != null) {
-            userRepository.save(user);
-        }
+        DeliveryPerson deliveryPersonNew=deliveryPersonProfileRepository.findById(deliveryPerson.getDeliveryPersonId()).orElseThrow(()->new RuntimeException("No Delivery Person Found"));
+        deliveryPersonNew.setVehicleNumber(deliveryPerson.getVehicleNumber());
+        deliveryPersonNew.setStatus(deliveryPerson.getStatus());
+        deliveryPersonNew.setEarnings(deliveryPerson.getEarnings());
+        deliveryPersonNew.setOperatingArea(deliveryPerson.getOperatingArea());
         return deliveryPersonProfileRepository.save(deliveryPerson);
     }
+    /*since DeliveryPerson has user as object we need to send entire user object
+    from endpoint(frontend), instead we can just make a dto class for DeliveryPerson that will auto fetch user details
+     */
 
 
 }

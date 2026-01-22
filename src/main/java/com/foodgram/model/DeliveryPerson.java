@@ -21,6 +21,8 @@ public class DeliveryPerson {
     private User user;
     @Column(name = "vehicle_number")
     private String vehicleNumber;
+    @Column(name = "operating_area")
+    private String operatingArea;
     @Enumerated(EnumType.STRING)
     @Column(name = "verification_status")
     private VerificationStatus status;
