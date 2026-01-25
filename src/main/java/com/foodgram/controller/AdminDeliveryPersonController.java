@@ -20,7 +20,7 @@ public class AdminDeliveryPersonController {
     @Autowired
     private DeliveryPersonService deliveryPersonService;
 
-    // Get all delivery persons with pagination and filters
+    // Get all delivery persons
     @GetMapping
     public ResponseEntity<ApiResponse> getAllDeliveryPersons(
             @RequestParam(defaultValue = "0") int page,
