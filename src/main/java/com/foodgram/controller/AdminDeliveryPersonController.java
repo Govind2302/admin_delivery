@@ -1,5 +1,6 @@
 package com.foodgram.controller;
 
+import com.foodgram.dto.deliveryperson.DeliveryPersonDTO;
 import com.foodgram.dto.request.UpdateDeliveryPersonRequest;
 import com.foodgram.dto.response.ApiResponse;
 import com.foodgram.dto.response.DeliveryPersonResponse;
@@ -20,7 +21,7 @@ public class AdminDeliveryPersonController {
     @Autowired
     private DeliveryPersonService deliveryPersonService;
 
-    // Get all delivery persons
+    // Get all delivery persons with pagination and filters
     @GetMapping
     public ResponseEntity<ApiResponse> getAllDeliveryPersons(
             @RequestParam(defaultValue = "0") int page,
@@ -37,7 +38,7 @@ public class AdminDeliveryPersonController {
     // Get delivery person by ID
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse> getDeliveryPersonById(@PathVariable Long id) {
-        DeliveryPersonResponse deliveryPerson = deliveryPersonService.getDeliveryPersonById(id);
+        DeliveryPersonResponse deliveryPerson = deliveryPersonService.getDeliveryPersonByUserId(id);
         ApiResponse response = new ApiResponse(true, "Delivery person fetched successfully", deliveryPerson);
         return ResponseEntity.ok(response);
     }
@@ -54,7 +55,7 @@ public class AdminDeliveryPersonController {
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse> updateDeliveryPerson(
             @PathVariable Long id,
-            @Valid @RequestBody UpdateDeliveryPersonRequest request
+            @Valid @RequestBody DeliveryPersonDTO request
     ) {
         DeliveryPersonResponse updatedDeliveryPerson = deliveryPersonService.updateDeliveryPerson(id, request);
         ApiResponse response = new ApiResponse(true, "Delivery person updated successfully", updatedDeliveryPerson);
@@ -82,8 +83,11 @@ public class AdminDeliveryPersonController {
 
     // Get pending verification delivery persons
     @GetMapping("/pending")
-    public ResponseEntity<ApiResponse> getPendingDeliveryPersons() {
-        List<DeliveryPersonResponse> deliveryPersons = deliveryPersonService.getPendingDeliveryPersons();
+    public ResponseEntity<ApiResponse> getPendingDeliveryPersons(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        List<DeliveryPersonResponse> deliveryPersons = deliveryPersonService.getPendingDeliveryPersons(page, size);
         ApiResponse response = new ApiResponse(true, "Pending delivery persons fetched successfully", deliveryPersons);
         return ResponseEntity.ok(response);
     }

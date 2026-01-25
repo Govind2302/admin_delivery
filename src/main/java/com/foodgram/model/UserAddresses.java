@@ -6,32 +6,28 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "user_addresses")
 @Data
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
 public class UserAddresses {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "address_id")
-    private Long addressId;
+    private int addressId;
 
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
+    @ManyToOne
+    @JoinColumn(name = "user_id", referencedColumnName = "user_id")
+    private User user;
 
-    @Column(name = "address_line", nullable = false, length = 500)
+    @Column(name = "address_line")
     private String addressLine;
 
-    @Column(name = "city", nullable = false, length = 100)
     private String city;
 
-    @Column(name = "state", nullable = false, length = 100)
     private String state;
 
-    @Column(name = "pincode", nullable = false, length = 20)
     private String pincode;
 
-    @Column(name = "label", length = 50)
     private String label;
 }

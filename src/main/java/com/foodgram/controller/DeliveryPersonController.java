@@ -6,6 +6,7 @@ import com.foodgram.dto.deliveryperson.DelRegisterRequest;
 import com.foodgram.dto.deliveryperson.DeliveryPersonDTO;
 import com.foodgram.model.DeliveryPerson;
 import com.foodgram.model.User;
+import com.foodgram.repository.DeliveryPersonProfileRepository;
 import com.foodgram.repository.UserRepository;
 import com.foodgram.service.AuthService;
 import com.foodgram.service.DeliveryPersonService;
@@ -30,8 +31,11 @@ public class DeliveryPersonController {
 
     @GetMapping("{dpId}/user/{userId}")
     public DeliveryPerson getProfile(@PathVariable int dpId,@PathVariable long userId){
-        return deliveryPersonService.getProfileDetails(dpId, userId);
+        return deliveryPersonService.getProfileDetails(dpId,userId);
     }
+
+
+
 
     @PutMapping("/{dpId}")
     public DeliveryPerson updateProfile(@PathVariable int dpId, @RequestBody DeliveryPersonDTO deliveryPersonDTO) {
