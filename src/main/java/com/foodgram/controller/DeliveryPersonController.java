@@ -31,8 +31,11 @@ public class DeliveryPersonController {
 
     @GetMapping("{dpId}/user/{userId}")
     public DeliveryPerson getProfile(@PathVariable int dpId,@PathVariable long userId){
-        return deliveryPersonService.getProfileDetails(dpId, userId);
+        return deliveryPersonService.getProfileDetails(dpId,userId);
     }
+
+
+
 
     @PutMapping("/{dpId}")
     public DeliveryPerson updateProfile(@PathVariable int dpId, @RequestBody DeliveryPersonDTO deliveryPersonDTO) {
