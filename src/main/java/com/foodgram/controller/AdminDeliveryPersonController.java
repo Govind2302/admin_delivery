@@ -1,5 +1,6 @@
 package com.foodgram.controller;
 
+import com.foodgram.dto.deliveryperson.DeliveryPersonDTO;
 import com.foodgram.dto.request.UpdateDeliveryPersonRequest;
 import com.foodgram.dto.response.ApiResponse;
 import com.foodgram.dto.response.DeliveryPersonResponse;
@@ -53,8 +54,8 @@ public class AdminDeliveryPersonController {
     // Update delivery person
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse> updateDeliveryPerson(
-            @PathVariable Long id,
-            @Valid @RequestBody UpdateDeliveryPersonRequest request
+            @PathVariable int id,
+            @Valid @RequestBody DeliveryPersonDTO request
     ) {
         DeliveryPersonResponse updatedDeliveryPerson = deliveryPersonService.updateDeliveryPerson(id, request);
         ApiResponse response = new ApiResponse(true, "Delivery person updated successfully", updatedDeliveryPerson);
@@ -82,8 +83,11 @@ public class AdminDeliveryPersonController {
 
     // Get pending verification delivery persons
     @GetMapping("/pending")
-    public ResponseEntity<ApiResponse> getPendingDeliveryPersons() {
-        List<DeliveryPersonResponse> deliveryPersons = deliveryPersonService.getPendingDeliveryPersons();
+    public ResponseEntity<ApiResponse> getPendingDeliveryPersons(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        List<DeliveryPersonResponse> deliveryPersons = deliveryPersonService.getPendingDeliveryPersons(page, size);
         ApiResponse response = new ApiResponse(true, "Pending delivery persons fetched successfully", deliveryPersons);
         return ResponseEntity.ok(response);
     }

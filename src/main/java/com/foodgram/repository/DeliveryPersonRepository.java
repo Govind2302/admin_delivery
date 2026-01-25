@@ -12,17 +12,22 @@ import java.util.Optional;
 @Repository
 public interface DeliveryPersonRepository extends JpaRepository<DeliveryPerson, Long> {
 
-    Optional<DeliveryPerson> findByUserId(Long userId);
+    Optional<DeliveryPerson> findByUser_UserId(Long userId);
 
-    Page<DeliveryPerson> findByVerificationStatus(DeliveryPerson.VerificationStatus status, Pageable pageable);
+    //User_UserId tells spring jpa to find a user object that has user_id
+
+    Page<DeliveryPerson> findByStatus(DeliveryPerson.VerificationStatus status, Pageable pageable);
 
     Page<DeliveryPerson> findByOperatingArea(String operatingArea, Pageable pageable);
 
-    Page<DeliveryPerson> findByVerificationStatusAndOperatingArea(
+    Page<DeliveryPerson> findByStatusAndOperatingArea(
             DeliveryPerson.VerificationStatus status,
             String operatingArea,
             Pageable pageable
     );
 
-    List<DeliveryPerson> findAllByVerificationStatus(DeliveryPerson.VerificationStatus status);
+
+
+
+    List<DeliveryPerson> findAllByStatus(DeliveryPerson.VerificationStatus status);
 }

@@ -1,18 +1,21 @@
 package com.foodgram.service;
 
 import com.foodgram.dto.deliveryperson.DeliveryPersonDTO;
+import com.foodgram.dto.response.DeliveryPersonResponse;
 import com.foodgram.model.DeliveryPerson;
 import com.foodgram.model.User;
 import com.foodgram.repository.DeliveryPersonProfileRepository;
+import com.foodgram.repository.DeliveryPersonRepository;
 import com.foodgram.repository.UserRepository;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class DeliveryPersonService {
@@ -24,6 +27,13 @@ public class DeliveryPersonService {
     DeliveryPerson deliveryPerson;
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private final DeliveryPersonRepository deliveryPersonRepository;
+
+    public DeliveryPersonService(DeliveryPersonRepository deliveryPersonRepository) {
+        this.deliveryPersonRepository = deliveryPersonRepository;
+    }
 
     public DeliveryPerson getProfileDetails(int dpId, long userId) {
         return deliveryPersonProfileRepository
@@ -39,9 +49,153 @@ public class DeliveryPersonService {
         deliveryPersonNew.setOperatingArea(deliveryPerson.getOperatingArea());
         return deliveryPersonProfileRepository.save(deliveryPerson);
     }
-    /*since DeliveryPerson has user as object we need to send entire user object
+      /*since DeliveryPerson has user as object we need to send entire user object
     from endpoint(frontend), instead we can just make a dto class for DeliveryPerson that will auto fetch user details
      */
 
 
+    public DeliveryPersonResponse updateDeliveryPerson(long id, @Valid DeliveryPersonDTO request) {
+
+        Optional<DeliveryPerson> optionalDeliveryPerson = deliveryPersonRepository.findById(id);
+
+        if (optionalDeliveryPerson.isEmpty()) {
+            throw new RuntimeException("Delivery person not found with id: " + id);
+        }
+
+        DeliveryPerson deliveryPerson = optionalDeliveryPerson.get();
+
+        // Update fields
+        deliveryPerson.setVehicleNumber(request.getVehicleNumber());
+        deliveryPerson.setOperatingArea(request.getOperatingArea());
+
+        // Validate and set status
+        try {
+            DeliveryPerson.VerificationStatus statusEnum = DeliveryPerson.VerificationStatus.valueOf(request.getStatus().toLowerCase());
+            deliveryPerson.setStatus(statusEnum);
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Invalid status: " + request.getStatus());
+        }
+
+        // Earnings (optional, default 0.0 if null)
+        deliveryPerson.setEarnings(request.getEarnings() );
+
+        // If userId is provided, update the link to User
+        if (request.getUserId() != null) {
+            User user = userRepository.findById(request.getUserId())
+                    .orElseThrow(() -> new RuntimeException("User not found with id: " + request.getUserId()));
+            deliveryPerson.setUser(user);
+        }
+
+        // Save updated entity
+        DeliveryPerson updated = deliveryPersonRepository.save(deliveryPerson);
+
+        // Map entity to DTO
+        DeliveryPersonDTO dto = new DeliveryPersonDTO();
+        dto.setUserId(updated.getUser().getUserId());
+        dto.setVehicleNumber(updated.getVehicleNumber());
+        dto.setOperatingArea(updated.getOperatingArea());
+        dto.setStatus(updated.getStatus().name());
+        dto.setEarnings(updated.getEarnings());
+
+        // Wrap in response
+        return new DeliveryPersonResponse(dto, "Delivery person updated successfully");
+
+
+
+    }
+
+    // 🔹 Get all delivery persons with optional filters
+    public Page<DeliveryPersonResponse> getAllDeliveryPersons(int page, int size, String verificationStatus, String operatingArea) {
+        Page<DeliveryPerson> deliveryPersons;
+
+        if (verificationStatus != null && operatingArea != null) {
+            deliveryPersons = deliveryPersonRepository.findByStatusAndOperatingArea(
+                    DeliveryPerson.VerificationStatus.valueOf(verificationStatus.toLowerCase()), operatingArea, PageRequest.of(page, size));
+        } else if (verificationStatus != null) {
+            deliveryPersons = deliveryPersonRepository.findByStatus(
+                    DeliveryPerson.VerificationStatus.valueOf(verificationStatus.toLowerCase()), PageRequest.of(page, size));
+        } else if (operatingArea != null) {
+            deliveryPersons = deliveryPersonRepository.findByOperatingArea(
+                    operatingArea, PageRequest.of(page, size));
+        } else {
+            deliveryPersons = deliveryPersonRepository.findAll(PageRequest.of(page, size));
+        }
+
+        return deliveryPersons.map(this::mapToResponse);
+    }
+
+    // 🔹 Get by deliveryPersonId
+    public DeliveryPersonResponse getDeliveryPersonById(Long id) {
+        DeliveryPerson deliveryPerson = deliveryPersonRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Delivery person not found with id: " + id));
+        return mapToResponse(deliveryPerson);
+    }
+
+    // 🔹 Get by userId
+    public DeliveryPersonResponse getDeliveryPersonByUserId(Long userId) {
+        DeliveryPerson deliveryPerson = deliveryPersonRepository.findByUser_UserId(userId)
+                .orElseThrow(() -> new RuntimeException("Delivery person not found for userId: " + userId));
+        return mapToResponse(deliveryPerson);
+    }
+
+    // 🔹 Delete delivery person
+    public void deleteDeliveryPerson(Long id) {
+        if (!deliveryPersonRepository.existsById(id)) {
+            throw new RuntimeException("Delivery person not found with id: " + id);
+        }
+        deliveryPersonRepository.deleteById(id);
+    }
+
+    // 🔹 Update verification status
+    public DeliveryPersonResponse updateVerificationStatus(Long id, String status) {
+        DeliveryPerson deliveryPerson = deliveryPersonRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Delivery person not found with id: " + id));
+
+        try {
+            deliveryPerson.setStatus(DeliveryPerson.VerificationStatus.valueOf(status.toLowerCase()));
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Invalid status: " + status);
+        }
+
+        DeliveryPerson updated = deliveryPersonRepository.save(deliveryPerson);
+        return mapToResponse(updated);
+    }
+
+    // 🔹 Get all pending delivery persons
+    public List<DeliveryPersonResponse> getPendingDeliveryPersons(int page, int size) {
+        Page<DeliveryPerson> pendingPage =
+                deliveryPersonRepository.findByStatus(
+                        DeliveryPerson.VerificationStatus.pending,
+                        PageRequest.of(page, size)
+                );
+
+        return pendingPage.getContent()
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // 🔹 Helper: map entity → response
+    private DeliveryPersonResponse mapToResponse(DeliveryPerson deliveryPerson) {
+        DeliveryPersonDTO dto = new DeliveryPersonDTO();
+        dto.setUserId(deliveryPerson.getUser().getUserId());
+        dto.setVehicleNumber(deliveryPerson.getVehicleNumber());
+        dto.setOperatingArea(deliveryPerson.getOperatingArea());
+        dto.setStatus(deliveryPerson.getStatus().name());
+        dto.setEarnings(deliveryPerson.getEarnings());
+
+        return new DeliveryPersonResponse(
+                (long) deliveryPerson.getDeliveryPersonId(),
+                dto,
+                deliveryPerson.getUser() != null ? deliveryPerson.getUser().getFullName() : null,
+                deliveryPerson.getUser() != null ? deliveryPerson.getUser().getEmail() : null,
+                "Success"
+        );
+    }
 }
+
+
+
+
+
+

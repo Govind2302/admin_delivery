@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 public class DeliveryPersonDTO {
-    private long userId;               // required for linking to existing user
+    private Long userId;               // required for linking to existing user
     private String vehicleNumber;     // required
     private String operatingArea;     // required
     private String status;              // must be "pending", "verified", or "rejected"
