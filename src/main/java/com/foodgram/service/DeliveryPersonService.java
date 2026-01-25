@@ -1,11 +1,16 @@
 package com.foodgram.service;
 
+import com.foodgram.dto.deliveryperson.DeliveryPersonDTO;
 import com.foodgram.model.DeliveryPerson;
 import com.foodgram.model.User;
 import com.foodgram.repository.DeliveryPersonProfileRepository;
 import com.foodgram.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.Optional;
 

@@ -12,6 +12,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/admin/auth")
 @CrossOrigin(origins = "*")
@@ -20,9 +22,16 @@ public class AdminAuthController {
     @Autowired
     private AuthService authService;
 
+//    @PostMapping("/login")
+//    public ResponseEntity<ApiResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
+//        LoginResponse loginResponse = authService.adminLogin(loginRequest);
+//        ApiResponse response = new ApiResponse(true, "Login successful", loginResponse);
+//        return new ResponseEntity<>(response, HttpStatus.OK);
+//    }
+
     @PostMapping("/login")
     public ResponseEntity<ApiResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
-        LoginResponse loginResponse = authService.adminLogin(loginRequest);
+        Map<String, Object> loginResponse = authService.adminLogin(loginRequest);
         ApiResponse response = new ApiResponse(true, "Login successful", loginResponse);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
