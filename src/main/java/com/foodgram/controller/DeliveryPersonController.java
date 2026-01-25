@@ -6,7 +6,6 @@ import com.foodgram.dto.deliveryperson.DelRegisterRequest;
 import com.foodgram.dto.deliveryperson.DeliveryPersonDTO;
 import com.foodgram.model.DeliveryPerson;
 import com.foodgram.model.User;
-import com.foodgram.repository.DeliveryPersonProfileRepository;
 import com.foodgram.repository.UserRepository;
 import com.foodgram.service.AuthService;
 import com.foodgram.service.DeliveryPersonService;
