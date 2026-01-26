@@ -3,9 +3,11 @@ package com.foodgram.service;
 import com.foodgram.dto.deliveryperson.DeliveryPersonDTO;
 import com.foodgram.dto.response.DeliveryPersonResponse;
 import com.foodgram.model.DeliveryPerson;
+import com.foodgram.model.Orders;
 import com.foodgram.model.User;
 import com.foodgram.repository.DeliveryPersonProfileRepository;
 import com.foodgram.repository.DeliveryPersonRepository;
+import com.foodgram.repository.OrderRepository;
 import com.foodgram.repository.UserRepository;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +16,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -27,6 +28,11 @@ public class DeliveryPersonService {
     DeliveryPerson deliveryPerson;
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private OrderRepository  orderRepository;
+
+
 
     @Autowired
     private final DeliveryPersonRepository deliveryPersonRepository;
@@ -56,37 +62,29 @@ public class DeliveryPersonService {
 
     public DeliveryPersonResponse updateDeliveryPerson(long id, @Valid DeliveryPersonDTO request) {
 
-        Optional<DeliveryPerson> optionalDeliveryPerson = deliveryPersonRepository.findById(id);
-
-        if (optionalDeliveryPerson.isEmpty()) {
-            throw new RuntimeException("Delivery person not found with id: " + id);
-        }
-
-        DeliveryPerson deliveryPerson = optionalDeliveryPerson.get();
+        DeliveryPerson deliveryPerson = deliveryPersonRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Delivery person not found with id: " + id));
 
         // Update fields
         deliveryPerson.setVehicleNumber(request.getVehicleNumber());
         deliveryPerson.setOperatingArea(request.getOperatingArea());
 
-        // Validate and set status
         try {
-            DeliveryPerson.VerificationStatus statusEnum = DeliveryPerson.VerificationStatus.valueOf(request.getStatus().toLowerCase());
+            DeliveryPerson.VerificationStatus statusEnum =
+                    DeliveryPerson.VerificationStatus.valueOf(request.getStatus().toLowerCase());
             deliveryPerson.setStatus(statusEnum);
         } catch (IllegalArgumentException e) {
             throw new RuntimeException("Invalid status: " + request.getStatus());
         }
 
-        // Earnings (optional, default 0.0 if null)
-        deliveryPerson.setEarnings(request.getEarnings() );
+        deliveryPerson.setEarnings(request.getEarnings());
 
-        // If userId is provided, update the link to User
         if (request.getUserId() != null) {
             User user = userRepository.findById(request.getUserId())
                     .orElseThrow(() -> new RuntimeException("User not found with id: " + request.getUserId()));
             deliveryPerson.setUser(user);
         }
 
-        // Save updated entity
         DeliveryPerson updated = deliveryPersonRepository.save(deliveryPerson);
 
         // Map entity to DTO
@@ -97,11 +95,14 @@ public class DeliveryPersonService {
         dto.setStatus(updated.getStatus().name());
         dto.setEarnings(updated.getEarnings());
 
-        // Wrap in response
-        return new DeliveryPersonResponse(dto, "Delivery person updated successfully");
-
-
-
+        // Wrap in response with all fields populated
+        return new DeliveryPersonResponse(
+                (long) updated.getDeliveryPersonId(),
+                dto,
+                updated.getUser() != null ? updated.getUser().getFullName() : null,
+                updated.getUser() != null ? updated.getUser().getEmail() : null,
+                "Delivery person updated successfully"
+        );
     }
 
     // 🔹 Get all delivery persons with optional filters
@@ -191,6 +192,41 @@ public class DeliveryPersonService {
                 deliveryPerson.getUser() != null ? deliveryPerson.getUser().getEmail() : null,
                 "Success"
         );
+    }
+
+    public List<Orders> getOrdersForDeliveryPerson(int dpId) {
+        return orderRepository.findByDeliveryPerson_DeliveryPersonId(dpId);
+    }
+
+
+
+
+
+    public Orders markOrderDelivered(int orderId) {
+        Orders order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        // ✅ Only allow delivery person to set "delivered"
+        if (order.getOrderStatus() != Orders.OrderStatus.preparing
+                && order.getOrderStatus() != Orders.OrderStatus.confirmed) {
+            throw new RuntimeException("Order cannot be marked delivered at this stage");
+        }
+
+        order.setOrderStatus(Orders.OrderStatus.delivered);
+        return orderRepository.save(order);
+    }
+
+    public Orders markOutForDelivery(int orderId) {
+        Orders order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        // ✅ Only allow transition if restaurant has marked it ready
+        if (order.getOrderStatus() != Orders.OrderStatus.preparing) {
+            throw new RuntimeException("Order must be prepared before delivery");
+        }
+
+        order.setOrderStatus(Orders.OrderStatus.out_for_delivery); // add this enum
+        return orderRepository.save(order);
     }
 }
 

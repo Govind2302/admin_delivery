@@ -41,6 +41,6 @@ public class Orders {
 
 
     public enum OrderStatus{
-        pending, confirmed,preparing,delivered, cancelled
+        pending, confirmed,out_for_delivery,preparing,delivered, cancelled
     }
 }
