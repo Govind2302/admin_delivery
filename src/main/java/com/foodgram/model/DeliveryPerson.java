@@ -36,6 +36,11 @@ public class DeliveryPerson {
         rejected
     }
 
+    public Long getUserId() {
+        return user != null ? user.getUserId() : null;
+    }
+
+
 
 
 

@@ -70,6 +70,27 @@ public class DeliveryPersonController {
         return ResponseEntity.ok(authService.login(request));
     }
 
+    @DeleteMapping("/{dpId}")
+    @PreAuthorize("hasRole('DELIVERY_PERSON')")
+    public ResponseEntity<?> deleteProfile(@PathVariable int dpId) {
+        deliveryPersonService.deleteDeliveryPerson((long) dpId);
+        return ResponseEntity.ok("Profile deleted successfully");
+    }
+
+
+    @GetMapping("/{dpId}/orders")
+    @PreAuthorize("hasRole('DELIVERY_PERSON')")
+    public ResponseEntity<?> getAssignedOrders(@PathVariable int dpId) {
+        return ResponseEntity.ok(deliveryPersonService.getOrdersForDeliveryPerson(dpId));
+    }
+
+    @PatchMapping("/orders/{orderId}/delivered")
+    @PreAuthorize("hasRole('DELIVERY_PERSON')")
+    public ResponseEntity<?> markDelivered(@PathVariable int orderId) {
+        return ResponseEntity.ok(deliveryPersonService.markOrderDelivered(orderId));
+    }
+
+
 
     @PostMapping("/profile")
     @PreAuthorize("hasRole('DELIVERY_PERSON')")
