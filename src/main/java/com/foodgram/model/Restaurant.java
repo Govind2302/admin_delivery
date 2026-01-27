@@ -8,12 +8,11 @@ import java.math.BigDecimal;
 import java.time.LocalTime;
 
 @Entity
-@Table(name = "Restaurants")
+@Table(name = "restaurants")   // matches DB table
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class Restaurant {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "restaurant_id")
@@ -47,18 +46,10 @@ public class Restaurant {
     @Column(name = "rating", precision = 2, scale = 1)
     private BigDecimal rating = BigDecimal.ZERO;
 
-    // Enum for verification status
     public enum VerificationStatus {
-        pending,
-        verified,
-        rejected;
-
-        public String getValue() {
-            return this.name();
-        }
+        pending, verified, rejected
     }
 
-    // Relationship with User (optional - if you want bidirectional mapping)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", insertable = false, updatable = false)
     private User user;

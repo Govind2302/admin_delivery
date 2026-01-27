@@ -30,6 +30,7 @@ public class SecurityConfig {
         http.csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         // allow register and login without token
+                        .requestMatchers("/delivery-person/auth/register", "/delivery-person/auth/login").permitAll()
                         .requestMatchers("/delivery-person/auth/**").permitAll()
                         .requestMatchers("/admin/auth/**").permitAll()
                         // everything else requires authentication

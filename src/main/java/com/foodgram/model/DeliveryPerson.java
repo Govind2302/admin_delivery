@@ -35,7 +35,7 @@ public class DeliveryPerson {
     @Column(name ="earnings")
     private double earnings;
 
-    @OneToMany(mappedBy = "deliveryPerson", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "deliveryPerson")
     private List<Deliveries> deliveries;
 
     public Long getUserId() {

@@ -2,18 +2,17 @@ package com.foodgram.service;
 
 import com.foodgram.dto.deliveryperson.DeliveryPersonDTO;
 import com.foodgram.dto.response.DeliveryPersonResponse;
+import com.foodgram.model.Deliveries;
 import com.foodgram.model.DeliveryPerson;
 import com.foodgram.model.Orders;
 import com.foodgram.model.User;
-import com.foodgram.repository.DeliveryPersonProfileRepository;
-import com.foodgram.repository.DeliveryPersonRepository;
-import com.foodgram.repository.OrderRepository;
-import com.foodgram.repository.UserRepository;
+import com.foodgram.repository.*;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -32,13 +31,53 @@ public class DeliveryPersonService {
     @Autowired
     private OrderRepository  orderRepository;
 
-
+    @Autowired
+    private DeliveriesRepository deliveriesRepository;
 
     @Autowired
     private final DeliveryPersonRepository deliveryPersonRepository;
 
     public DeliveryPersonService(DeliveryPersonRepository deliveryPersonRepository) {
         this.deliveryPersonRepository = deliveryPersonRepository;
+    }
+
+
+    @Transactional
+    public DeliveryPersonResponse createDeliveryPerson(@Valid DeliveryPersonDTO request) {
+        // Step 1: Fetch the user
+        User user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + request.getUserId()));
+
+        // Step 2: Validate role
+        if (user.getRole() != User.Role.delivery_person) {
+            throw new IllegalStateException("Only users with role 'delivery_person' can be linked here");
+        }
+
+        // Step 3: Create delivery person profile
+        DeliveryPerson deliveryPerson = new DeliveryPerson();
+        deliveryPerson.setUser(user);
+        deliveryPerson.setVehicleNumber(request.getVehicleNumber());
+        deliveryPerson.setOperatingArea(request.getOperatingArea());
+        deliveryPerson.setStatus(DeliveryPerson.VerificationStatus.pending);
+        deliveryPerson.setEarnings(request.getEarnings() );
+
+        DeliveryPerson saved = deliveryPersonRepository.save(deliveryPerson);
+
+        // Step 4: Map to response
+        DeliveryPersonDTO dto = new DeliveryPersonDTO();
+        dto.setUserId(saved.getUser().getUserId());
+        dto.setVehicleNumber(saved.getVehicleNumber());
+        dto.setOperatingArea(saved.getOperatingArea());
+        dto.setStatus(saved.getStatus().name());
+        dto.setEarnings(saved.getEarnings());
+
+        return new DeliveryPersonResponse(
+                (long) saved.getDeliveryPersonId(),
+                dto,
+                saved.getUser() != null ? saved.getUser().getFullName() : null,
+                saved.getUser() != null ? saved.getUser().getEmail() : null,
+                "Delivery person created successfully"
+        );
     }
 
     public DeliveryPerson getProfileDetails(int dpId, long userId) {
@@ -194,8 +233,8 @@ public class DeliveryPersonService {
         );
     }
 
-    public List<Orders> getOrdersForDeliveryPerson(int dpId) {
-        return orderRepository.findByDeliveryPerson_DeliveryPersonId(dpId);
+    public List<Deliveries> getOrdersForDeliveryPerson(int dpId) {
+        return deliveriesRepository.findByDeliveryPerson_DeliveryPersonId(dpId);
     }
 
 

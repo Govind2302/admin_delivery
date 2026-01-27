@@ -14,10 +14,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+
 
 @RestController
 @RequestMapping("/delivery-person")
 public class DeliveryPersonController {
+
+    private static final Logger log = LoggerFactory.getLogger(DeliveryPersonController.class);
+
+
 
     @Autowired
     private DeliveryPersonService deliveryPersonService;
@@ -67,6 +75,10 @@ public class DeliveryPersonController {
 
     @PostMapping("/auth/login")
     public ResponseEntity<?> login(@RequestBody DelLoginRequest request) {
+        System.out.println("LoginController received: email=" + request.getEmail() + ", password=" + request.getPassword());
+        // or use a logger:
+        log.info("LoginController received email={} password={}", request.getEmail(), request.getPassword());
+
         return ResponseEntity.ok(authService.login(request));
     }
 
@@ -103,6 +115,12 @@ public class DeliveryPersonController {
 
         User user = userRepository.findById(dto.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // 🔹 Role validation
+        if (user.getRole() != User.Role.delivery_person) {
+            throw new IllegalStateException("Only users with role 'delivery_person' can create a delivery profile");
+        }
+
         dp.setUser(user);
 
         DeliveryPerson saved = deliveryPersonProfileRepository.save(dp);

@@ -28,8 +28,15 @@ public class Review {
     @Column(name = "item_id")
     private Long itemId;
 
-    @Column(name = "delivery_person_id")
-    private Long deliveryPersonId;
+    @ManyToOne
+    @JoinColumn(name = "delivery_person_id", referencedColumnName = "delivery_person_id")
+    private DeliveryPerson deliveryPerson;
+
+
+    public Long getDeliveryPersonId() {
+        return Long.valueOf(deliveryPerson != null ? deliveryPerson.getDeliveryPersonId() : null);
+    }
+
 
     @Column(name = "rating", nullable = false, precision = 2, scale = 1)
     private BigDecimal rating;
