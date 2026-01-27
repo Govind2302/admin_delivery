@@ -25,7 +25,7 @@ public class SocialMediaPosts {
 
     @ManyToOne
     @JoinColumn(name = "restaurant_id")
-    private Restaurants restaurant;
+    private Restaurant restaurant;
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;

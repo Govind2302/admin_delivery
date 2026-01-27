@@ -28,6 +28,9 @@ public class AuthService {
 
     private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
 
+
+
+
     @Autowired
     private UserRepository userRepository;
 
@@ -144,18 +147,28 @@ public class AuthService {
         user.setRole(User.Role.valueOf(request.getRole().toLowerCase()));
         user.setStatus(User.Status.inactive);
 
-        userRepository.save(user);
+        userRepository.saveAndFlush(user);
+        String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
+
 
         Map<String, Object> response = new HashMap<>();
         response.put("message", "User registered successfully");
         response.put("userId", user.getUserId());
-        response.put("role", user.getRole());
+        response.put("role", user.getRole().name()); // ensure it's a String
+        response.put("token", token);                // 🔹 include token
+
         return response;
+
     }
 
     public Map<String, Object> login(@Valid @NotNull DelLoginRequest request) {
+
+        logger.info("AuthService comparing email={} password={}", request.getEmail(), request.getPassword());
+
+
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("Invalid email or password"));
+        logger.info("AuthService comparing email={} password={}", user.getEmail(), user.getPassword());
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new RuntimeException("Invalid email or password");

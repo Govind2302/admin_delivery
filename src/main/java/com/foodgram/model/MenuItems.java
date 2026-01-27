@@ -20,7 +20,7 @@ public class MenuItems {
 
     @ManyToOne
     @JoinColumn(name = "restaurant_id", nullable = false)
-    private Restaurants restaurant;
+    private Restaurant restaurant;
 
     @ManyToOne
     @JoinColumn(name = "category_id")
