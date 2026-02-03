@@ -4,6 +4,7 @@ package com.foodgram.controller;
 import com.foodgram.dto.deliveryperson.DelLoginRequest;
 import com.foodgram.dto.deliveryperson.DelRegisterRequest;
 import com.foodgram.dto.deliveryperson.DeliveryPersonDTO;
+import com.foodgram.dto.deliveryperson.DeliveryPersonProfileDto;
 import com.foodgram.model.DeliveryPerson;
 import com.foodgram.model.User;
 import com.foodgram.repository.DeliveryPersonProfileRepository;
@@ -37,28 +38,30 @@ public class DeliveryPersonController {
     private DeliveryPersonProfileRepository  deliveryPersonProfileRepository;
 
 
-    @GetMapping("{dpId}/user/{userId}")
-    public DeliveryPerson getProfile(@PathVariable int dpId,@PathVariable long userId){
-        return deliveryPersonService.getProfileDetails(dpId,userId);
+
+
+    @GetMapping("/{id}/user/{userId}/profile")
+    public ResponseEntity<DeliveryPersonProfileDto> getProfile(
+            @PathVariable Long id,
+            @PathVariable Long userId) {
+
+        DeliveryPersonProfileDto profile = deliveryPersonService.getProfile(id);
+        return ResponseEntity.ok(profile);
     }
 
 
 
 
-    @PutMapping("/{dpId}")
-    public DeliveryPerson updateProfile(@PathVariable int dpId, @RequestBody DeliveryPersonDTO deliveryPersonDTO) {
-        DeliveryPerson deliveryPerson=new DeliveryPerson();
-        deliveryPerson.setDeliveryPersonId(dpId);
-        deliveryPerson.setEarnings(deliveryPersonDTO.getEarnings());
-        deliveryPerson.setVehicleNumber(deliveryPersonDTO.getVehicleNumber());
-        deliveryPerson.setOperatingArea(deliveryPersonDTO.getOperatingArea());
-        deliveryPerson.setStatus(DeliveryPerson.VerificationStatus.valueOf(deliveryPersonDTO.getStatus()));
-        User user=new User();
-        user.setUserId(deliveryPersonDTO.getUserId());
-        deliveryPerson.setUser(user);
 
-        return deliveryPersonService.updateProfileDetails(deliveryPerson);
+    @PutMapping("/{dpId}/profile")
+    public ResponseEntity<DeliveryPersonProfileDto> updateProfile(
+            @PathVariable Long dpId,
+            @RequestBody DeliveryPersonProfileDto dto) {
+
+        DeliveryPersonProfileDto updated = deliveryPersonService.updateProfile(dpId, dto);
+        return ResponseEntity.ok(updated);
     }
+
     /*since DeliveryPerson has user as object we need to send entire user object
     from endpoint(frontend), instead we can just make a dto class for DeliveryPerson that will auto fetch user details
      */
@@ -102,6 +105,11 @@ public class DeliveryPersonController {
         return ResponseEntity.ok(deliveryPersonService.markOrderDelivered(orderId));
     }
 
+    @PatchMapping("/orders/{orderId}/cancel")
+    @PreAuthorize("hasRole('DELIVERY_PERSON')")
+    public ResponseEntity<?> cancelOrder(@PathVariable int orderId) {
+        return ResponseEntity.ok(deliveryPersonService.cancelOrder(orderId));
+    }
 
 
     @PostMapping("/profile")

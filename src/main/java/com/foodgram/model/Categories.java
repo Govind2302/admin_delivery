@@ -31,14 +31,14 @@ public class Categories {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private CategoryStatus status = CategoryStatus.ACTIVE;
+    private CategoryStatus status = CategoryStatus.active;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
     // Enum for status
     public enum CategoryStatus {
-        ACTIVE, INACTIVE
+        active,inactive
     }
 
 

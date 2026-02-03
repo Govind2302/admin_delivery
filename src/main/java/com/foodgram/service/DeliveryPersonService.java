@@ -1,6 +1,10 @@
 package com.foodgram.service;
 
 import com.foodgram.dto.deliveryperson.DeliveryPersonDTO;
+import com.foodgram.dto.deliveryperson.DeliveryPersonProfileDto;
+import com.foodgram.dto.orders.DeliveryOrderDTO;
+import com.foodgram.dto.orders.OrderDTO;
+import com.foodgram.dto.orders.OrderItemDTO;
 import com.foodgram.dto.response.DeliveryPersonResponse;
 import com.foodgram.model.Deliveries;
 import com.foodgram.model.DeliveryPerson;
@@ -8,6 +12,8 @@ import com.foodgram.model.Orders;
 import com.foodgram.model.User;
 import com.foodgram.repository.*;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -80,11 +86,7 @@ public class DeliveryPersonService {
         );
     }
 
-    public DeliveryPerson getProfileDetails(int dpId, long userId) {
-        return deliveryPersonProfileRepository
-                .findByDeliveryPersonIdAndUser_UserId(dpId, userId)
-                .orElseThrow(() -> new RuntimeException("Profile not found"));
-    }
+
 
     public DeliveryPerson updateProfileDetails(DeliveryPerson deliveryPerson) {
         DeliveryPerson deliveryPersonNew=deliveryPersonProfileRepository.findById(deliveryPerson.getDeliveryPersonId()).orElseThrow(()->new RuntimeException("No Delivery Person Found"));
@@ -233,9 +235,109 @@ public class DeliveryPersonService {
         );
     }
 
-    public List<Deliveries> getOrdersForDeliveryPerson(int dpId) {
-        return deliveriesRepository.findByDeliveryPerson_DeliveryPersonId(dpId);
+    private static final Logger log = LoggerFactory.getLogger(DeliveryPersonService.class);
+
+    public List<DeliveryOrderDTO> getOrdersForDeliveryPerson(int dpId) {
+        log.info("Fetching deliveries for deliveryPersonId={}", dpId);
+
+        List<Deliveries> deliveries = deliveriesRepository.findByDeliveryPerson_DeliveryPersonId(dpId);
+        log.debug("Found {} deliveries", deliveries.size());
+
+        return deliveries.stream().map(delivery -> {
+            log.info("Mapping deliveryId={}", delivery.getDelId());
+
+            Orders order = delivery.getOrders();
+            log.debug("OrderId={} status={} total={}",
+                    order.getOrderId(), order.getOrderStatus(), order.getTotalAmount());
+
+            // Map order items
+            List<OrderItemDTO> itemDTOs = order.getOrderItems().stream().map(item -> {
+                log.debug("Mapping orderItemId={} menuItem={}",
+                        item.getOrderItemId(), item.getMenuItem().getName());
+
+                OrderItemDTO dto = new OrderItemDTO();
+                dto.setItemId(Math.toIntExact(item.getMenuItem().getItemId()));
+                dto.setName(item.getMenuItem().getName());
+                dto.setPrice(item.getPrice());
+                dto.setQuantity(item.getQuantity());
+                return dto;
+            }).collect(Collectors.toList());
+
+            OrderDTO orderDTO = new OrderDTO();
+            orderDTO.setOrderId(order.getOrderId());
+            orderDTO.setOrderStatus(order.getOrderStatus().name());
+            orderDTO.setTotalAmount(order.getTotalAmount());
+            orderDTO.setOrderDate(order.getOrderDate().toString());
+            orderDTO.setCustomerName(order.getUser().getFullName());
+            orderDTO.setRestaurantName(order.getRestaurants().getName());
+            orderDTO.setItems(itemDTOs);
+
+            DeliveryOrderDTO dto = new DeliveryOrderDTO();
+            dto.setDeliveryId(delivery.getDelId());
+            dto.setDeliveryPersonId(delivery.getDeliveryPerson().getDeliveryPersonId());
+            dto.setDeliveryStatus(delivery.getStatus().name());
+            dto.setDeliveryTime(delivery.getDelTime() != null ? delivery.getDelTime().toString() : null);
+            dto.setOrder(orderDTO);
+
+            log.info("Finished mapping deliveryId={} with orderId={}",
+                    delivery.getDelId(), order.getOrderId());
+
+            return dto;
+        }).collect(Collectors.toList());
     }
+
+
+
+    public DeliveryPersonProfileDto getProfile(Long dpId) {
+        DeliveryPerson deliveryPerson = deliveryPersonRepository.findById(dpId)
+                .orElseThrow(() -> new RuntimeException("Delivery person not found"));
+        return toDto(deliveryPerson);
+    }
+
+    @Transactional
+    public Orders cancelOrder(int orderId) {
+        Orders order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        // ✅ Only allow cancellation if order is not already delivered
+        if (order.getOrderStatus() == Orders.OrderStatus.delivered) {
+            throw new RuntimeException("Delivered orders cannot be cancelled");
+        }
+
+        order.setOrderStatus(Orders.OrderStatus.cancelled); // add CANCELLED enum in Orders.OrderStatus if not present
+        return orderRepository.save(order);
+    }
+
+
+    public DeliveryPersonProfileDto updateProfile(Long dpId, DeliveryPersonProfileDto dto) {
+        DeliveryPerson deliveryPerson = deliveryPersonRepository.findById(dpId)
+                .orElseThrow(() -> new RuntimeException("Delivery person not found"));
+
+        // Update fields
+        deliveryPerson.setVehicleNumber(dto.getVehicleNumber());
+        deliveryPerson.setOperatingArea(dto.getOperatingArea());
+        deliveryPerson.setStatus(DeliveryPerson.VerificationStatus.valueOf(dto.getStatus()));
+        deliveryPerson.setEarnings(dto.getEarnings());
+
+        DeliveryPerson updated = deliveryPersonRepository.save(deliveryPerson);
+        return toDto(updated);
+    }
+
+    private DeliveryPersonProfileDto toDto(DeliveryPerson deliveryPerson) {
+        DeliveryPersonProfileDto dto = new DeliveryPersonProfileDto();
+        dto.setDeliveryPersonId((long) deliveryPerson.getDeliveryPersonId());
+        dto.setUserId(deliveryPerson.getUser().getUserId());
+        dto.setFullName(deliveryPerson.getUser().getFullName());
+        dto.setEmail(deliveryPerson.getUser().getEmail());
+        dto.setPhone(deliveryPerson.getUser().getPhone());
+        dto.setVehicleNumber(deliveryPerson.getVehicleNumber());
+        dto.setOperatingArea(deliveryPerson.getOperatingArea());
+        dto.setStatus(deliveryPerson.getStatus().name());
+        dto.setEarnings(deliveryPerson.getEarnings());
+        return dto;
+    }
+
+
 
 
 

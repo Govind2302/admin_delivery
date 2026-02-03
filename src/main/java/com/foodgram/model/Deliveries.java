@@ -23,6 +23,11 @@
         @JoinColumn(name = "order_id", referencedColumnName = "order_id")
         private Orders orders;
 
+        @Enumerated(EnumType.STRING)
+        @Column(name = "status", nullable = false)
+        private DeliveryStatus status = DeliveryStatus.picked_up;
+
+
         // Many deliveries can be assigned to one delivery person
         @ManyToOne
         @JoinColumn(name = "delivery_person_id", referencedColumnName = "delivery_person_id", nullable = false)
@@ -30,4 +35,15 @@
 
         @Column(name ="delivery_time")
         private LocalDateTime delTime;
+
+        public enum DeliveryStatus {
+            picked_up, in_transit, delivered, failed_attempt
+        }
+
+
+
+
+
+
+
     }

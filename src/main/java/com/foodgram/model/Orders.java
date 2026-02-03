@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.List;
 
 @Entity
 @AllArgsConstructor
@@ -36,6 +37,11 @@ public class Orders {
     private double totalAmount;
     @Column(name = "order_date")
     private LocalDateTime orderDate;
+
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<OrderItem> orderItems = new java.util.ArrayList<>();
+
+
 
 
     public enum OrderStatus{
