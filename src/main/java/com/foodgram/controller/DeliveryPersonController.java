@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/delivery-person")
+@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
 public class DeliveryPersonController {
 
     private static final Logger log = LoggerFactory.getLogger(DeliveryPersonController.class);

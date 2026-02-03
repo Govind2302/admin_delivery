@@ -37,5 +37,5 @@ public class Cart {
         ACTIVE, SAVED, CHECKED_OUT, ABANDONED
     }
 
-    // Getters and Setters
+
 }
